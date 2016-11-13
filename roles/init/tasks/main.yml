@@ -1,0 +1,44 @@
+---
+
+- include_vars: ././secure.yml
+- include_vars: ./main.yml
+
+- name: Change root password
+  user: name=root password="{{ UBUNTU_COMMON_ROOT_PASSWORD }}"
+- name: Add user
+  user: name={{ sudo_user }} shell=/bin/bash
+
+- name: Add ssh user keys
+  authorized_key: user={{ sudo_user }} key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+- name: Add user to sudoers
+  lineinfile: dest=/etc/sudoers
+              regexp="{{ sudo_user }} ALL"
+              line="{{ sudo_user }} ALL=(ALL) NOPASSWD:ALL"
+              state=present
+              
+- name: Update APT package cache
+  apt: update_cache=yes cache_valid_time=3600
+
+- name: Upgrade APT to the latest packages
+  apt: upgrade=safe
+
+- name: Install required packages
+  apt: state=installed pkg={{ item }}
+  with_items: ubuntu_common_required_packages
+
+- name: Disallow password authentication
+  lineinfile:
+    dest=/etc/ssh/sshd_config
+    regexp="^PasswordAuthentication"
+    line="PasswordAuthentication no"
+    state=present
+  notify: Restart ssh
+
+- name: Disallow root SSH access
+  lineinfile:
+    dest=/etc/ssh/sshd_config
+    regexp="^PermitRootLogin"
+    line="PermitRootLogin no"
+    state=present
+  notify: Restart ssh

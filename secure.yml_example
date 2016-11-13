@@ -1,0 +1,4 @@
+---
+UBUNTU_COMMON_ROOT_PASSWORD: 'secureroot'
+sudo_user: 'username'
+sudo_users_key: ~/.ssh/id_rsa.pub
